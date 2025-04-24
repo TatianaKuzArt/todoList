@@ -24,7 +24,6 @@ class App extends React.Component {
             done: false,
             id: this.maxId++,
             createdAt: new Date(),
-            status: '',
             edit: false,
         };
     }
@@ -72,6 +71,26 @@ class App extends React.Component {
         this.setState({filter});
     };
 
+    editTask = (id, newLabel) => {
+        this.setState(({ data }) => {
+            const idx = data.findIndex((el) => el.id === id);
+            const oldItem = data[idx];
+            const updatedItem = {  ...oldItem, label: newLabel, edit: false,  };
+            const newArray = [...data.slice(0, idx), updatedItem, ...data.slice(idx + 1)];
+            return { data: newArray };
+        });
+    };
+
+    toggleEditMode = (id) => {
+        this.setState(({ data }) => {
+            const idx = data.findIndex((el) => el.id === id);
+            const oldItem = data[idx];
+            const updatedItem = { ...oldItem, edit: true };
+            const newArray = [...data.slice(0, idx), updatedItem, ...data.slice(idx + 1)];
+            return { data: newArray };
+        });
+    };
+
     render() {
         const {data, filter} = this.state;
 
@@ -84,7 +103,7 @@ class App extends React.Component {
             <div className="todo-app">
                 <NewTaskForm onItemAdded={this.addItem}/>
                 <section className="main">
-                    <TaskList todos={visibleItems} onDeleted={this.deleteTask} onToggleDone={this.onToggleDone}/>
+                    <TaskList todos={visibleItems} onDeleted={this.deleteTask} onToggleDone={this.onToggleDone} onEditTask={this.editTask} onToggleEditMode={this.toggleEditMode} />
                     <Footer
                         todoCount={todoCount}
                         onClearCompleted={this.clearCompletedTask}
