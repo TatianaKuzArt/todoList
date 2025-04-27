@@ -72,6 +72,7 @@ class App extends React.Component {
     };
 
     editTask = (id, newLabel) => {
+        console.log('edit task ', id)
         this.setState(({ data }) => {
             const idx = data.findIndex((el) => el.id === id);
             const oldItem = data[idx];
@@ -82,6 +83,7 @@ class App extends React.Component {
     };
 
     toggleEditMode = (id) => {
+        console.log('edit toggleEditMode ', id)
         this.setState(({ data }) => {
             const idx = data.findIndex((el) => el.id === id);
             const oldItem = data[idx];
