@@ -3,12 +3,45 @@ import NewTaskForm from '../new-task-form/new-task-form.js';
 import TaskList from '../task-list/task-list.js';
 import Footer from '../footer';
 import './app.css';
+import task from "../task";
 
 class App extends React.Component {
     maxId = 100;
     state = {
-        data: [ ],
+        data: [],
         filter: 'all',
+    };
+
+    componentDidMount() {
+        this.intervalId = setInterval(this.tickTimers, 1000);
+    }
+
+    componentWillUnmount() {
+        clearInterval(this.intervalId);
+    }
+
+    tickTimers = () => {
+        this.setState(({ data }) => ({
+            data: data.map((t) =>
+                t.isRunning ? { ...t, timer: t.timer + 1 } : t
+            ),
+        }));
+    };
+
+    toggleTimer = (id) => {
+        this.setState(({data}) => ({
+            data: data.map((task) =>
+                task.id === id ? {...task, isRunning: !task.isRunning} : task
+            ),
+        }));
+    };
+
+    stopTimer = (id) => {
+        this.setState(({data}) => ({
+            data: data.map((task) =>
+                task.id === id ? {...task, isRunning: false} : task
+            ),
+        }));
     };
 
     deleteTask = (id) => {
@@ -25,6 +58,8 @@ class App extends React.Component {
             id: this.maxId++,
             createdAt: new Date(),
             edit: false,
+            timer: 0,
+            isRunning: false
         };
     }
 
@@ -73,23 +108,23 @@ class App extends React.Component {
 
     editTask = (id, newLabel) => {
         console.log('edit task ', id)
-        this.setState(({ data }) => {
+        this.setState(({data}) => {
             const idx = data.findIndex((el) => el.id === id);
             const oldItem = data[idx];
-            const updatedItem = {  ...oldItem, label: newLabel, edit: false,  };
+            const updatedItem = {...oldItem, label: newLabel, edit: false,};
             const newArray = [...data.slice(0, idx), updatedItem, ...data.slice(idx + 1)];
-            return { data: newArray };
+            return {data: newArray};
         });
     };
 
     toggleEditMode = (id) => {
         console.log('edit toggleEditMode ', id)
-        this.setState(({ data }) => {
+        this.setState(({data}) => {
             const idx = data.findIndex((el) => el.id === id);
             const oldItem = data[idx];
-            const updatedItem = { ...oldItem, edit: true };
+            const updatedItem = {...oldItem, edit: true};
             const newArray = [...data.slice(0, idx), updatedItem, ...data.slice(idx + 1)];
-            return { data: newArray };
+            return {data: newArray};
         });
     };
 
@@ -105,7 +140,14 @@ class App extends React.Component {
             <div className="todo-app">
                 <NewTaskForm onItemAdded={this.addItem}/>
                 <section className="main">
-                    <TaskList todos={visibleItems} onDeleted={this.deleteTask} onToggleDone={this.onToggleDone} onEditTask={this.editTask} onToggleEditMode={this.toggleEditMode} />
+                    <TaskList todos={visibleItems}
+                              onDeleted={this.deleteTask}
+                              onToggleDone={this.onToggleDone}
+                              onEditTask={this.editTask}
+                              onToggleEditMode={this.toggleEditMode}
+                              onToggleTimer={this.toggleTimer}
+                              onStopTimer={this.stopTimer}
+                    />
                     <Footer
                         todoCount={todoCount}
                         onClearCompleted={this.clearCompletedTask}

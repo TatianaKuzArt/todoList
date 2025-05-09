@@ -6,8 +6,7 @@ import './task-list.css';
 export default class TaskList extends Component {
 
     render() {
-        let {todos, onDeleted, onToggleDone, onToggleEditMode, onEditTask} = this.props;
-
+        let {todos, onDeleted, onToggleDone, onToggleEditMode, onEditTask, onToggleTimer, onStopTimer} = this.props;
 
 
         const elements = todos.map(({id, done, edit, label, ...itemProps}) => {
@@ -33,12 +32,19 @@ export default class TaskList extends Component {
                         {...itemProps}
                         done={done}
                         edit={edit}
+                        onToggleTimer={(e) => {
+                            onToggleTimer(id)}
+                        }
                         onDeleted={() => onDeleted(id)}
-                        onToggleDone={() => onToggleDone(id)}
+                        onToggleDone={() => {
+                            onStopTimer(id)
+                            onToggleDone(id)
+                        }}
                         onToggleEditMode={() => onToggleEditMode(id)}
                         onEditTask={onEditTask}
                     />
-                    {edit ? <input className="edit" type="text" defaultValue={label} onKeyDown={editTask}  autoFocus/> : null}
+                    {edit ? <input className="edit" type="text" defaultValue={label} onKeyDown={editTask}
+                                   autoFocus/> : null}
                 </li>
             );
         });
