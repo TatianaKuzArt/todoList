@@ -4,47 +4,67 @@ import PropTypes from 'prop-types';
 import './task-list.css';
 
 export default class TaskList extends Component {
+    componentDidMount() {
+        this.intervalId = setInterval(() => {
+            this.forceUpdate();
+        }, 1000);
+    }
+
+    componentWillUnmount() {
+        clearInterval(this.intervalId);
+    }
 
     render() {
-        let {todos, onDeleted, onToggleDone, onToggleEditMode, onEditTask, onToggleTimer, onStopTimer} = this.props;
+        const {
+            todos,
+            onDeleted,
+            onToggleDone,
+            onToggleEditMode,
+            onEditTask,
+            onToggleTimer,
+        } = this.props;
 
-
-        const elements = todos.map(({id, done, edit, label, ...itemProps}) => {
+        const elements = todos.map(({ id, done, edit, label, timer, startTime, ...itemProps }) => {
             let classNames = '';
-            if (done) {
-                classNames = 'completed';
-            }
-            if (edit) {
-                classNames = 'editing';
-            }
+            if (done) classNames = 'completed';
+            if (edit) classNames = 'editing';
 
             const editTask = (event) => {
                 if (event.key === 'Enter') {
-                    event.preventDefault()
-                    this.props.onEditTask(id, event.target.value)
+                    event.preventDefault();
+                    this.props.onEditTask(id, event.target.value);
                 }
+            };
+
+            let actualTimer = timer;
+            if (itemProps.isRunning && startTime) {
+                const diff = Math.floor((Date.now() - startTime) / 1000);
+                actualTimer += diff;
             }
 
             return (
                 <li key={id} className={classNames}>
                     <Task
                         label={label}
-                        {...itemProps}
                         done={done}
                         edit={edit}
-                        onToggleTimer={(e) => {
-                            onToggleTimer(id)}
-                        }
+                        timer={actualTimer}
+                        {...itemProps}
+                        onToggleTimer={() => onToggleTimer(id)}
                         onDeleted={() => onDeleted(id)}
-                        onToggleDone={() => {
-                            onStopTimer(id)
-                            onToggleDone(id)
-                        }}
+                        onToggleDone={() => onToggleDone(id)}
                         onToggleEditMode={() => onToggleEditMode(id)}
                         onEditTask={onEditTask}
                     />
-                    {edit ? <input className="edit" type="text" defaultValue={label} onKeyDown={editTask}
-                                   autoFocus/> : null}
+                    {edit ? (
+                        <input
+                            className="edit"
+                            type="text"
+                            defaultValue={label}
+                            onKeyDown={editTask}
+                            autoFocus
+                        />
+                    ) : null}
                 </li>
             );
         });
@@ -52,7 +72,6 @@ export default class TaskList extends Component {
         return <ul className="todo-list">{elements}</ul>;
     }
 }
-
 
 TaskList.propTypes = {
     todos: PropTypes.arrayOf(
@@ -62,16 +81,23 @@ TaskList.propTypes = {
             done: PropTypes.bool.isRequired,
             createdAt: PropTypes.instanceOf(Date),
             edit: PropTypes.bool,
+            timer: PropTypes.number.isRequired,
+            startTime: PropTypes.number,
+            isRunning: PropTypes.bool,
         })
     ),
     onDeleted: PropTypes.func,
     onToggleDone: PropTypes.func,
+    onToggleEditMode: PropTypes.func,
+    onEditTask: PropTypes.func,
+    onToggleTimer: PropTypes.func,
 };
 
 TaskList.defaultProps = {
     todos: [],
-    onDeleted: () => {
-    },
-    onToggleDone: () => {
-    },
+    onDeleted: () => {},
+    onToggleDone: () => {},
+    onToggleEditMode: () => {},
+    onEditTask: () => {},
+    onToggleTimer: () => {},
 };
