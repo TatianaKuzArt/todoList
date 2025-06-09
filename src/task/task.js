@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { formatDistance } from 'date-fns';
 import PropTypes from 'prop-types';
 import './task.css';
+import classNames from 'classnames';
 
 const Task = ({
                   label,
@@ -57,11 +58,13 @@ const Task = ({
           {label}
         </span>
                 <span className="description">
-          {isRunning ? (
-              <button className="icon icon-pause" onClick={onToggleTimer}></button>
-          ) : (
-              <button className="icon icon-play" onClick={onToggleTimer}></button>
-          )}
+         <button
+             className={classNames('icon', {
+                 'icon-play': !isRunning,
+                 'icon-pause': isRunning,
+             })}
+             onClick={onToggleTimer}
+         />
                     {getDisplayTimer()}
         </span>
                 <span className="description">

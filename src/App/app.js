@@ -1,33 +1,37 @@
-import React from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import NewTaskForm from '../new-task-form/new-task-form.js';
 import TaskList from '../task-list/task-list.js';
 import Footer from '../footer';
 import './app.css';
 
-class App extends React.Component {
-    maxId = 100;
+const App = () => {
+    const [data, setData] = useState([]);
+    const [filter, setFilter] = useState('all');
+    const maxId = useRef(100);
 
-    state = {
-        data: [],
-        filter: 'all',
-    };
+    const createTodoItem = (label) => ({
+        label,
+        done: false,
+        id: maxId.current++,
+        createdAt: new Date(),
+        edit: false,
+        timer: 0,
+        isRunning: false,
+        startTime: null,
+    });
 
-    createTodoItem(label) {
-        return {
-            label,
-            done: false,
-            id: this.maxId++,
-            createdAt: new Date(),
-            edit: false,
-            timer: 0,
-            isRunning: false,
-            startTime: null,
-        };
-    }
+    const addItem = useCallback((text) => {
+        const newItem = createTodoItem(text);
+        setData((prevData) => [...prevData, newItem]);
+    }, []);
 
-    toggleTimer = (id) => {
-        this.setState(({ data }) => ({
-            data: data.map((task) => {
+    const deleteTask = useCallback((id) => {
+        setData((prevData) => prevData.filter((item) => item.id !== id));
+    }, []);
+
+    const toggleTimer = useCallback((id) => {
+        setData((prevData) =>
+            prevData.map((task) => {
                 if (task.id !== id) return task;
 
                 if (task.isRunning) {
@@ -39,55 +43,60 @@ class App extends React.Component {
                         timer: task.timer + elapsed,
                     };
                 } else {
-                    // Запускаем
                     return {
                         ...task,
                         isRunning: true,
                         startTime: Date.now(),
                     };
                 }
-            }),
-        }));
-    };
+            })
+        );
+    }, []);
 
-    deleteTask = (id) => {
-        this.setState(({ data }) => ({
-            data: data.filter((item) => item.id !== id),
-        }));
-    };
+    const onToggleDone = useCallback((id) => {
+        setData((prevData) =>
+            prevData.map((task) => {
+                if (task.id !== id) return task;
 
-    onToggleDone = (id) => {
-        this.setState(({ data }) => {
-            const idx = data.findIndex((el) => el.id === id);
-            const oldItem = data[idx];
-            const newItem = {
-                ...oldItem,
-                done: !oldItem.done,
-                isRunning: oldItem.done ? oldItem.isRunning : false,
-                timer: oldItem.done ? oldItem.timer : Math.floor(
-                    oldItem.timer + (oldItem.startTime ? (Date.now() - oldItem.startTime) / 1000 : 0)
-                ),
-                startTime: null
-            };
-            const newArray = [...data.slice(0, idx), newItem, ...data.slice(idx + 1)];
-            return { data: newArray };
-        });
-    };
+                const wasDone = task.done;
+                const elapsed = wasDone
+                    ? 0
+                    : task.startTime
+                        ? Math.floor((Date.now() - task.startTime) / 1000)
+                        : 0;
 
-    addItem = (text) => {
-        const newItem = this.createTodoItem(text);
-        this.setState(({ data }) => ({
-            data: [...data, newItem],
-        }));
-    };
+                return {
+                    ...task,
+                    done: !wasDone,
+                    isRunning: wasDone ? task.isRunning : false,
+                    timer: wasDone ? task.timer : task.timer + elapsed,
+                    startTime: null,
+                };
+            })
+        );
+    }, []);
 
-    clearCompletedTask = () => {
-        this.setState((prevState) => ({
-            data: prevState.data.filter((task) => !task.done),
-        }));
-    };
+    const clearCompletedTask = useCallback(() => {
+        setData((prevData) => prevData.filter((task) => !task.done));
+    }, []);
 
-    filter(items, filter) {
+    const editTask = useCallback((id, newLabel) => {
+        setData((prevData) =>
+            prevData.map((task) =>
+                task.id === id ? { ...task, label: newLabel, edit: false } : task
+            )
+        );
+    }, []);
+
+    const toggleEditMode = useCallback((id) => {
+        setData((prevData) =>
+            prevData.map((task) =>
+                task.id === id ? { ...task, edit: true } : task
+            )
+        );
+    }, []);
+
+    const filterItems = useCallback((items, filter) => {
         switch (filter) {
             case 'active':
                 return items.filter((item) => !item.done);
@@ -97,60 +106,37 @@ class App extends React.Component {
             default:
                 return items;
         }
-    }
+    }, []);
 
-    onFilterChange = (filter) => {
-        this.setState({ filter });
-    };
+    const onFilterChange = useCallback((newFilter) => {
+        setFilter(newFilter);
+    }, []);
 
-    editTask = (id, newLabel) => {
-        this.setState(({ data }) => {
-            const idx = data.findIndex((el) => el.id === id);
-            const oldItem = data[idx];
-            const updatedItem = { ...oldItem, label: newLabel, edit: false };
-            const newArray = [...data.slice(0, idx), updatedItem, ...data.slice(idx + 1)];
-            return { data: newArray };
-        });
-    };
+    const visibleItems = filterItems(data, filter);
+    const doneCount = data.filter((el) => el.done).length;
+    const todoCount = data.length - doneCount;
 
-    toggleEditMode = (id) => {
-        this.setState(({ data }) => {
-            const idx = data.findIndex((el) => el.id === id);
-            const oldItem = data[idx];
-            const updatedItem = { ...oldItem, edit: true };
-            const newArray = [...data.slice(0, idx), updatedItem, ...data.slice(idx + 1)];
-            return { data: newArray };
-        });
-    };
-
-    render() {
-        const { data, filter } = this.state;
-        const visibleItems = this.filter(data, filter);
-        const doneCount = data.filter((el) => el.done).length;
-        const todoCount = data.length - doneCount;
-
-        return (
-            <div className="todo-app">
-                <NewTaskForm onItemAdded={this.addItem} />
-                <section className="main">
-                    <TaskList
-                        todos={visibleItems}
-                        onDeleted={this.deleteTask}
-                        onToggleDone={this.onToggleDone}
-                        onEditTask={this.editTask}
-                        onToggleEditMode={this.toggleEditMode}
-                        onToggleTimer={this.toggleTimer}
-                    />
-                    <Footer
-                        todoCount={todoCount}
-                        onClearCompleted={this.clearCompletedTask}
-                        filter={filter}
-                        onFilterChange={this.onFilterChange}
-                    />
-                </section>
-            </div>
-        );
-    }
-}
+    return (
+        <div className="todo-app">
+            <NewTaskForm onItemAdded={addItem} />
+            <section className="main">
+                <TaskList
+                    todos={visibleItems}
+                    onDeleted={deleteTask}
+                    onToggleDone={onToggleDone}
+                    onEditTask={editTask}
+                    onToggleEditMode={toggleEditMode}
+                    onToggleTimer={toggleTimer}
+                />
+                <Footer
+                    todoCount={todoCount}
+                    onClearCompleted={clearCompletedTask}
+                    filter={filter}
+                    onFilterChange={onFilterChange}
+                />
+            </section>
+        </div>
+    );
+};
 
 export default App;
