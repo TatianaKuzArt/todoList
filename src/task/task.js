@@ -17,7 +17,7 @@ const Task = ({
                   timer = 0,
                   startTime = 0,
               }) => {
-    const [, forceUpdate] = useState(0); // Используем хак для обновления каждую секунду
+    const [, forceUpdate] = useState(0);
 
     useEffect(() => {
         const intervalId = setInterval(() => {
